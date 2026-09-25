@@ -18,11 +18,14 @@ Legend: `[x]` verified working · `[~]` configured but never exercised ·
          v
  (2) PULL REQUEST  ................................................ PR gate
      +--------------------------+---------------------------------------+
-     | pr-base.yml              | head must contain the base tip        | [~]
-     | ci.yml          (js)     | Node 24 + pnpm frozen, build:js,      | [~]
+     | pr-base.yml              | head must contain the base tip        | [x]
+     | ci.yml          (js)     | Node 24 + pnpm frozen, build:js,      | [x]
      |                          | typecheck, lint, architecture, tests  |
-     | ci.yml          (rust)   | fmt, clippy, cargo test host-core     | [~]
+     | ci.yml          (rust)   | fmt, clippy, cargo test host-core     | [x]
      | docs-check.yml           | docs + AGENTS/CLAUDE policy sync      | [~]
+     |                          | path-filtered: docs/**, AGENTS.md,    |
+     |                          | CLAUDE.md, changelog*.ts, check-*.mjs |
+     |                          | so a code-only PR skips it            |
      | [ ] e2e-smoke.yml        | needs a self-hosted runner            |
      +--------------------------+---------------------------------------+
      | [ ] branch protection on main requiring the checks above
@@ -77,8 +80,8 @@ Legend: `[x]` verified working · `[~]` configured but never exercised ·
 
 | # | Stage | State | Evidence |
 | --- | --- | --- | --- |
-| 1 | Local edit + push | `[x]` | `main` at `896c5f0`, pushed over SSH |
-| 2 | PR gate | `[~]` | workflows exist; **no PR has ever run**, and `main` is not protected |
+| 1 | Local edit + push | `[x]` | `main` at `d6e73c1`, pushed over SSH |
+| 2 | PR gate | `[x]` | PR #1: `PR base` 14s, `CI / js` 4m13s, `CI / rust` 2m1s, all pass. `main` still unprotected |
 | 3 | Main CI | `[x]` | run `896c5f0` on `main`: JS 3.7 min + Rust 1.6 min, both success |
 | 4 | Tag release | `[ ]` | **no tag and no release exists yet**; `release.yml` never ran |
 | 5 | Distribution | `[ ]` | no GitHub Release, no update feed published |
@@ -86,6 +89,12 @@ Legend: `[x]` verified working · `[~]` configured but never exercised ·
 | - | E2E in CI | `[ ]` | no workflow runs any `test:e2e:*` (upstream has none either) |
 | - | Supply chain | `[ ]` | no provenance, SBOM, or SHA-pinned actions |
 | - | Local clone | `[!]` | clone is `--depth 1`; `git merge upstream/main` fails on unrelated histories |
+
+Two side notes from the PR run: a CodeRabbit app is installed on this account and
+reported `Review skipped: manual review required for this OSS repository`, so it
+does not act as a gate; and `docs-check.yml` is path-filtered, so verifying it
+needs a PR that touches `docs/**`, `AGENTS.md`, `CLAUDE.md`, or
+`scripts/check-*.mjs`.
 
 What is deliberately **not** on this fork's roadmap: macOS signing. There is no
 Apple Developer account, so `MACOS_SIGNING` stays unset and the unsigned lane
@@ -100,15 +109,28 @@ gh run list --repo Chuwhyangle/PI-Desktop --limit 5
 ```
 Push any commit to `main` and watch `CI` go green in about 4 minutes.
 
-### Stage 2 (PR gate) - next verification
+### Stage 2 (PR gate) - verified, one step left
 
-1. `git switch -c test/pr-gate` from `main`, add a whitespace-only change, push
-   it, and open a pull request against `main`.
-2. Expect three checks: `PR base`, `CI / js`, `CI / rust`.
-3. Then make them mandatory:
-   `Settings -> Branches -> Add branch protection rule` for `main` with those
-   checks required. Until that exists, the gate is advisory only.
-4. Delete the throwaway branch afterwards.
+Verified by opening PR #1 (`test/pr-gate`, a throwaway non-doc file because
+`ci.yml` ignores markdown). All three required checks passed:
+
+| check | workflow | time |
+| --- | --- | --- |
+| `Head contains latest base` | pr-base.yml | 14s |
+| `JS build / typecheck / lint / architecture / test` | ci.yml | 4m13s |
+| `Rust host-core format / lint / test` | ci.yml | 2m1s |
+
+The PR was closed without merging and the branch deleted, so nothing was left
+behind. `docs-check.yml` correctly stayed out: it is path-filtered to
+`docs/**`, `README*.md`, `AGENTS.md`, `CLAUDE.md`,
+`packages/shared/src/changelog*.ts`, `scripts/check-*.mjs`, and
+`docs/scripts/**`, and the smoke PR touched none of them.
+
+**Still missing: branch protection.** `GET /branches/main/protection` answers
+`Branch not protected`, so the three checks above run but nothing requires them.
+Set `Settings -> Branches -> Add branch protection rule` for `main`, enable
+"Require status checks to pass", and select the three checks. Until then the
+gate is advisory and a red PR can still be merged.
 
 ### Stage 4 (tag release) - the first end-to-end proof
 
@@ -143,8 +165,14 @@ a Gatekeeper prompt on macOS. That is the documented trade-off, not a failure.
 
 ## Suggested order
 
-1. Stage 4: prove one tag produces a complete, installable release. (highest value: everything downstream depends on it)
-2. Stage 2: protect `main` so the green gate is actually enforced.
-3. Stage 6 enabler: make `allowPrerelease` configurable, then define the channels.
-4. Stage 5 addition: CN mirror on the operator's own server.
-5. Stage 2 addition: E2E on a self-hosted runner (the largest remaining hole).
+1. **Stage 4** - prove one tag produces a complete, installable release. Highest
+   value: stages 5 and 6 are unreachable without it, and it needs no secrets.
+2. **Stage 2, last step** - protect `main` with the three checks the smoke PR
+   just exercised, so the gate stops being advisory.
+3. **Stage 6 enabler** - make `allowPrerelease` configurable, then define the
+   nightly / beta / stable channels. Until then only non-`-` tags reach an
+   install, i.e. there is exactly one channel.
+4. **Stage 5 addition** - CN mirror on the operator's own server, since
+   `mirror-to-cnb.yml` never runs in this fork.
+5. **Stage 2 addition** - E2E on a self-hosted runner. This is the largest
+   remaining hole: no workflow runs any `test:e2e:*`, upstream included.
