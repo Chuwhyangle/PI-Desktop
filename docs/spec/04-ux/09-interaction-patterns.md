@@ -861,6 +861,13 @@ may be retained while exactly one workspace supplies the visible shell context.
 - Activating a process, group or item header toggles only that level. Closing a
   parent preserves child state, reopening restores it, and sibling groups remain
   independent. Opening a parent is never an expand-all action.
+- Alongside those level-scoped headers, one explicit transcript-wide action
+  (`toggleThinkingDisclosure`, `Mod+Shift+T`, and the chat topbar button) expands
+  every thinking block together with the process, activity and hosted-search
+  containers that hold them, and collapses them again once they are all open. It
+  is the only action that crosses levels, it leaves tool rows untouched, and it
+  stays absent when the visible session holds no thinking content; header
+  activation is unaffected.
 - A manual item action claims its group and process as user-owned without toggling
   them. Streaming and completion cannot reopen a manual close or close around
   content the user opened, focused or selected. Choices survive mode changes,

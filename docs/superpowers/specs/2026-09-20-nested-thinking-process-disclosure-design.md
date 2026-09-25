@@ -310,6 +310,30 @@ For this document-only change, check local references, encoding, whitespace and 
 
 Recommended review baseline: adopt all three independent levels, keep detailed process narration open by default, fold completed ordinary groups, and retain the current leaf-detail defaults. Do not add expand-all actions or new preferences until actual use demonstrates a need.
 
+### Amendment: transcript-wide thinking toggle
+
+The baseline above withheld an expand-all action until actual use demonstrated a
+need. Reading a long transcript for its reasoning still required opening every
+turn and activity group by hand, which is that need: the shortcut
+`toggleThinkingDisclosure` (`Mod+Shift+T`) and the chat topbar button now expand
+every thinking block together, and collapse them again when they are already
+all open.
+
+The action is deliberately narrower than "expand everything":
+
+- it moves only the thinking family — the `thinking` rows and the `turn`,
+  `activity` and `hostedSearch` containers that hold them, because a collapsed
+  container keeps its children mounted but hidden;
+- it never changes a `tool` row, so reading the reasoning does not bury the
+  calls inside a wall of tool output;
+- it derives its state from the rows themselves (`choice.open`, else the row's
+  own automatic default), so a transcript with no thinking content reports
+  `none` and the entry point stays absent instead of becoming a no-op;
+- it writes only explicit open/closed choices into the existing pane-lifetime
+  map; nothing is persisted, and the `thinkingDisplayMode` preference is
+  untouched, so a pane in Compact mode (which renders thinking as a
+  non-expandable status line) is unaffected.
+
 ## 10. Inspected source and existing contracts
 
 Paths are relative to this proposal. They describe the inspected baseline, not future guarantees.

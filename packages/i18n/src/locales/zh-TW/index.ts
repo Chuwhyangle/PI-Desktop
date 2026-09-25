@@ -524,6 +524,8 @@ export const zhTW = {
     webSearchMore_other: "還有 {{count}} 個來源",
     thinkingShow: "顯示思考過程",
     thinkingHide: "隱藏思考過程",
+    toggleThinkingExpand: "展開思考過程",
+    toggleThinkingCollapse: "折疊思考過程",
     untitledTask: "新建任務",
   },
   session: {
@@ -921,6 +923,7 @@ sklm: {
       toggleFullScreen: "切換全屏",
       voiceToggle: "切換語音輸入",
       voiceCancel: "取消語音輸入",
+      toggleThinkingDisclosure: "展開或折疊思考過程",
     },
     skills: "技能",
     skillsGlobalPath: "全域性技能路徑",

@@ -15,6 +15,7 @@ import { ConversationWidthHandles } from "./ConversationWidthHandles";
 import { useAppStore } from "../stores/app-store";
 import { headPermission } from "../lib/pending-permissions";
 import { headAsk } from "../lib/pending-asks";
+import type { ThinkingDisclosureController } from "../features/chat/transcript/disclosure-state";
 
 const StableComposer = memo(Composer);
 
@@ -46,8 +47,17 @@ function projectName(path?: string | null, name?: string | null) {
  */
 export const ChatSurface = memo(function ChatSurface({
   visible = true,
+  onThinkingControllerChange,
 }: {
   visible?: boolean;
+  /**
+   * Forwarded to every retained pane; the surface itself has no use for the
+   * controllers, it only carries them up to the app shell.
+   */
+  onThinkingControllerChange?: (
+    sessionId: string,
+    controller: ThinkingDisclosureController | null,
+  ) => void;
 }) {
   const { t } = useTranslation();
   const activeSessionId = useAppStore((state) => state.activeSessionId);
@@ -199,6 +209,7 @@ export const ChatSurface = memo(function ChatSurface({
                 key={id}
                 sessionId={id}
                 visible={visible && id === visibleSessionId}
+                onThinkingControllerChange={onThinkingControllerChange}
               />
             ))}
           </div>

@@ -529,6 +529,8 @@ export const tr = {
     webSearchMore_other: "+{{count}} kaynak daha",
     thinkingShow: "Düşünmeyi göster",
     thinkingHide: "Düşünmeyi gizle",
+    toggleThinkingExpand: "Düşünme sürecini genişlet",
+    toggleThinkingCollapse: "Düşünme sürecini daralt",
     untitledTask: "Yeni görev",
   },
   session: {
@@ -934,6 +936,7 @@ sklm: {
       toggleFullScreen: "Tam ekranı aç/kapat",
       voiceToggle: "Sesli girişi aç/kapat",
       voiceCancel: "Sesli girişi iptal et",
+      toggleThinkingDisclosure: "Düşünme sürecini genişlet veya daralt",
     },
     skills: "Beceriler",
     skillsGlobalPath: "Genel beceriler yolu",

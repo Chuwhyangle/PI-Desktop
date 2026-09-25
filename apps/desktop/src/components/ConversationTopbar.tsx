@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "../stores/app-store";
 import {
+  IconChevronsUpDown,
   IconSidebar,
   IconNewSession,
   IconSearch,
@@ -26,12 +27,21 @@ export function ConversationTopbar({
   onToggleSidebar,
   onNewTask,
   onOpenSearch,
+  onToggleThinking,
+  thinkingExpanded = false,
 }: {
   sidebarCollapsed: boolean;
   workPanelOpen: boolean;
   onToggleSidebar: () => void;
   onNewTask: () => void;
   onOpenSearch: () => void;
+  /**
+   * Expand or collapse every thinking block of the visible conversation. Left
+   * undefined while the active session has no thinking content to act on, which
+   * is also what hides the button.
+   */
+  onToggleThinking?: () => void;
+  thinkingExpanded?: boolean;
 }) {
   const { t } = useTranslation();
   const activeSessionId = useAppStore((s) => s.activeSessionId);
@@ -44,6 +54,11 @@ export function ConversationTopbar({
     ? t("chat.untitledTask")
     : activeSession?.title || t("chat.untitledTask");
   const project = projectName(workspace?.path, workspace?.name);
+  // The label states the action the press performs, so the tooltip never lies
+  // about what the toggle will do next.
+  const thinkingToggleLabel = t(
+    thinkingExpanded ? "chat.toggleThinkingCollapse" : "chat.toggleThinkingExpand",
+  );
 
   return (
     <div
@@ -99,6 +114,18 @@ export function ConversationTopbar({
           >
             <IconSearch size={15} />
           </TooltipButton>
+          {onToggleThinking ? (
+            <TooltipButton
+              type="button"
+              className="ct-icon-btn"
+              tooltip={thinkingToggleLabel}
+              ariaLabel={thinkingToggleLabel}
+              aria-pressed={thinkingExpanded}
+              onClick={onToggleThinking}
+            >
+              <IconChevronsUpDown size={15} />
+            </TooltipButton>
+          ) : null}
         </div>
       </div>
     </div>

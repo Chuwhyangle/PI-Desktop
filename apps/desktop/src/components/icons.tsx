@@ -18,6 +18,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronsUpDown,
   CircleAlert,
   CircleCheck,
   CircleHelp,
@@ -190,6 +191,8 @@ export const IconBot = icon(Bot);
 export const IconCheckCheck = icon(CheckCheck);
 export const IconShield = icon(Shield);
 export const IconChevronDown = icon(ChevronDown);
+/** Expand or collapse every block on a surface (transcript thinking toggle). */
+export const IconChevronsUpDown = icon(ChevronsUpDown);
 export const IconClose = icon(X);
 /* Frameless window chrome (WindowControls): minimize / maximize / restore. */
 export const IconMinus = icon(Minus);

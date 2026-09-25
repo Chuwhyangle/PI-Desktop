@@ -51,8 +51,17 @@ export function createTranscriptSlice({
   | "deleteMessage"
   | "rollbackWorkspaceChange"
   | "abort"
+  | "toggleThinkingDisclosure"
 > {
   return {
+    toggleThinkingDisclosure: () => {
+      // The rows and their disclosure map live inside the session pane, so the
+      // action only has to be observable: one press moves the counter the app
+      // shell applies to the pane on screen.
+      set((state) => ({
+        thinkingDisclosureRequest: state.thinkingDisclosureRequest + 1,
+      }));
+    },
     compactContext: async () => {
       const state = get();
       const sessionId = state.activeSessionId;

@@ -524,6 +524,8 @@ export const zhCN = {
     webSearchMore_other: "还有 {{count}} 个来源",
     thinkingShow: "显示思考过程",
     thinkingHide: "隐藏思考过程",
+    toggleThinkingExpand: "展开思考过程",
+    toggleThinkingCollapse: "折叠思考过程",
     untitledTask: "新建任务",
   },
   session: {
@@ -921,6 +923,7 @@ sklm: {
       toggleFullScreen: "切换全屏",
       voiceToggle: "切换语音输入",
       voiceCancel: "取消语音输入",
+      toggleThinkingDisclosure: "展开或折叠思考过程",
     },
     skills: "技能",
     skillsGlobalPath: "全局技能路径",

@@ -520,6 +520,8 @@ export const es = {
     "webSearchMore_other": "+{{count}} fuentes más",
     "thinkingShow": "Mostrar pensamiento",
     "thinkingHide": "Ocultar pensamiento",
+    "toggleThinkingExpand": "Expandir el proceso de razonamiento",
+    "toggleThinkingCollapse": "Contraer el proceso de razonamiento",
     "untitledTask": "Nueva tarea"
   },
   "session": {
@@ -935,7 +937,8 @@ sklm: {
       "zoomOut": "Zoom out",
       "toggleFullScreen": "Alternar pantalla completa",
       "voiceToggle": "Alternar entrada de voz",
-      "voiceCancel": "Cancelar entrada de voz"
+      "voiceCancel": "Cancelar entrada de voz",
+      "toggleThinkingDisclosure": "Mostrar u ocultar el razonamiento",
     },
     "skills": "Habilidades",
     "skillsGlobalPath": "Ruta de habilidades globales",

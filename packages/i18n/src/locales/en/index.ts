@@ -527,6 +527,8 @@ export const en = {
     webSearchMore_other: "+{{count}} more sources",
     thinkingShow: "Show thinking",
     thinkingHide: "Hide thinking",
+    toggleThinkingExpand: "Expand thinking process",
+    toggleThinkingCollapse: "Collapse thinking process",
     untitledTask: "New task",
   },
   session: {
@@ -785,6 +787,7 @@ sklm: {
       toggleFullScreen: "Toggle full screen",
       voiceToggle: "Toggle voice input",
       voiceCancel: "Cancel voice input",
+      toggleThinkingDisclosure: "Expand or collapse thinking",
     },
     skills: "Skills",
     skillsGlobalPath: "Global skills path",

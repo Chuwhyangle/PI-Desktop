@@ -529,6 +529,8 @@ export const ko = {
     webSearchMore_other: "출처 {{count}}개 더",
     thinkingShow: "생각 표시",
     thinkingHide: "생각 숨기기",
+    toggleThinkingExpand: "사고 과정 펼치기",
+    toggleThinkingCollapse: "사고 과정 접기",
     untitledTask: "새 작업",
   },
   session: {
@@ -944,6 +946,7 @@ sklm: {
       toggleFullScreen: "전체 화면 전환",
       voiceToggle: "음성 입력 전환",
       voiceCancel: "음성 입력 취소",
+      toggleThinkingDisclosure: "사고 과정 펼치기 또는 접기",
     },
     skills: "스킬",
     skillsGlobalPath: "전역 스킬 경로",

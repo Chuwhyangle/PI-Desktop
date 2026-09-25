@@ -520,6 +520,8 @@ export const de = {
     "webSearchMore_other": "+{{count}} weitere Quellen",
     "thinkingShow": "Denken anzeigen",
     "thinkingHide": "Denken ausblenden",
+    "toggleThinkingExpand": "Denkprozess einblenden",
+    "toggleThinkingCollapse": "Denkprozess ausblenden",
     "untitledTask": "Neue Aufgabe"
   },
   "session": {
@@ -935,7 +937,8 @@ sklm: {
       "zoomOut": "Verkleinern",
       "toggleFullScreen": "Vollbild umschalten",
       "voiceToggle": "Spracheingabe umschalten",
-      "voiceCancel": "Spracheingabe abbrechen"
+      "voiceCancel": "Spracheingabe abbrechen",
+      "toggleThinkingDisclosure": "Denkprozess ein- oder ausblenden",
     },
     "skills": "Fähigkeiten",
     "skillsGlobalPath": "Globaler Kompetenzpfad",

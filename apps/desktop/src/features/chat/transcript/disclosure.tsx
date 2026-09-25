@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useId,
   useLayoutEffect,
   useMemo,
@@ -11,33 +12,12 @@ import {
   type ReactNode,
 } from "react";
 import { useDisclosureAnchorNotifier } from "../../../lib/disclosure-anchor-context";
-
-type Choice = { open: boolean; revealRequest?: number };
-
-/** Only explicit choices are retained; untouched nodes derive their defaults. */
-class DisclosureChoices {
-  private choices = new Map<string, Choice>();
-  private listeners = new Map<string, Set<() => void>>();
-
-  get = (key: string) => this.choices.get(key);
-
-  set(key: string, choice: Choice) {
-    const previous = this.choices.get(key);
-    if (previous?.open === choice.open && previous.revealRequest === choice.revealRequest) return;
-    this.choices.set(key, choice);
-    this.listeners.get(key)?.forEach((listener) => listener());
-  }
-
-  subscribe(key: string, listener: () => void) {
-    const listeners = this.listeners.get(key) ?? new Set<() => void>();
-    listeners.add(listener);
-    this.listeners.set(key, listeners);
-    return () => {
-      listeners.delete(listener);
-      if (listeners.size === 0) this.listeners.delete(key);
-    };
-  }
-}
+import {
+  createThinkingDisclosureController,
+  DisclosureChoices,
+  disclosureKindFromKey,
+  type ThinkingDisclosureController,
+} from "./disclosure-state";
 
 const ChoicesContext = createContext<DisclosureChoices | null>(null);
 const ParentContext = createContext<{ claim: () => void; visible: boolean }>({
@@ -45,14 +25,58 @@ const ParentContext = createContext<{ claim: () => void; visible: boolean }>({
   visible: true,
 });
 
-/** The retained session pane owns this map; no state is persisted to the host. */
-export function TranscriptDisclosureProvider({ children }: { children: ReactNode }) {
+/**
+ * The retained session pane owns this map; no state is persisted to the host.
+ *
+ * `onControllerChange` publishes the pane's thinking-disclosure controller to
+ * the app shell, which is what lets the toolbar button and the global shortcut
+ * act on the visible session's rows without hoisting this provider. It is
+ * reported from a passive effect so the rows have registered their kinds by
+ * then, and cleared on unmount so a closed pane cannot be toggled.
+ */
+export function TranscriptDisclosureProvider({
+  children,
+  onControllerChange,
+}: {
+  children: ReactNode;
+  onControllerChange?: (controller: ThinkingDisclosureController | null) => void;
+}) {
   const [choices] = useState(() => new DisclosureChoices());
+  const controller = useMemo(
+    () => createThinkingDisclosureController(choices),
+    [choices],
+  );
+  useEffect(() => {
+    if (!onControllerChange) return;
+    onControllerChange(controller);
+    return () => onControllerChange(null);
+  }, [controller, onControllerChange]);
   return <ChoicesContext.Provider value={choices}>{children}</ChoicesContext.Provider>;
 }
 
 export function disclosureKey(kind: string, ...ids: string[]) {
   return JSON.stringify([kind, ...ids]);
+}
+
+/**
+ * Row bookkeeping for the thinking-disclosure action: which kind a key belongs
+ * to, and the default the row shows without an explicit choice.
+ *
+ * Callers use it from a layout effect, so no metadata is written while React
+ * renders, and recording can never change what the row itself derives.
+ */
+export function useThinkingDisclosure() {
+  const sharedChoices = useContext(ChoicesContext);
+  const [localChoices] = useState(() => new DisclosureChoices());
+  const choices = sharedChoices ?? localChoices;
+  return useCallback(
+    (key: string, kind: string | undefined, autoDefault: boolean) => {
+      if (kind === undefined) return;
+      choices.setKind(key, kind);
+      choices.setAutoDefault(key, autoDefault);
+    },
+    [choices],
+  );
 }
 
 function ownsReadingPosition(body: HTMLElement | null): boolean {
@@ -80,11 +104,21 @@ export function useAutomaticDisclosure(
   const choice = useSyncExternalStore(subscribe, snapshot, snapshot);
   // A pending reveal is the derived default, so the first paint (and SSR)
   // already shows the row the transcript search asked to open.
-  const open = choice?.open ?? (
+  const automaticDefault =
     revealRequest !== undefined && choice?.revealRequest !== revealRequest
       ? true
-      : automaticOpen
-  );
+      : automaticOpen;
+  const open = choice?.open ?? automaticDefault;
+
+  // The row's kind is read back from its own key, so no call site has to pass it
+  // twice, and a row without a disclosure key stays outside the thinking family.
+  // Recording happens in a layout effect: metadata may not change what this row
+  // derives above, and it only feeds the transcript-wide expand/collapse action.
+  const registerRow = useThinkingDisclosure();
+  const kind = useMemo(() => disclosureKindFromKey(key), [key]);
+  useLayoutEffect(() => {
+    registerRow(key, kind, automaticDefault);
+  }, [automaticDefault, key, kind, registerRow]);
   const titleRef = useRef<HTMLButtonElement | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const notifyAnchor = useDisclosureAnchorNotifier();

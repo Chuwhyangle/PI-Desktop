@@ -518,6 +518,8 @@ export const ptBR = {
     webSearchMore_other: "+{{count}} fontes adicionais",
     thinkingShow: "Mostrar raciocínio",
     thinkingHide: "Ocultar raciocínio",
+    toggleThinkingExpand: "Expandir o processo de raciocínio",
+    toggleThinkingCollapse: "Recolher o processo de raciocínio",
     untitledTask: "Tarefa sem título"
   },
   session: {
@@ -762,7 +764,8 @@ export const ptBR = {
       zoomOut: "Diminuir zoom",
       toggleFullScreen: "Alternar tela completa",
       voiceToggle: "Alternar entrada de voz",
-      voiceCancel: "Cancelar entrada de voz"
+      voiceCancel: "Cancelar entrada de voz",
+      toggleThinkingDisclosure: "Expandir ou recolher o raciocínio",
     },
     skills: "Habilidades",
     skillsGlobalPath: "Caminho global de habilidades",

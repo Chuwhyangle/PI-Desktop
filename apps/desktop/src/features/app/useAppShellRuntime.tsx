@@ -769,6 +769,11 @@ export function useAppShellRuntime() {
           case "toggleFullScreen":
             void api.nativeMenuAction(id);
             break;
+          case "toggleThinkingDisclosure":
+            // The disclosure map belongs to each session pane, so the visible
+            // pane's controller is what the app shell drives from this request.
+            useAppStore.getState().toggleThinkingDisclosure();
+            break;
         }
       };
       runShortcut(shortcut.id);

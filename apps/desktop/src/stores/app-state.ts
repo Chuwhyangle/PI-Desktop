@@ -127,6 +127,11 @@ export type AppState = {
   messages: UiMessage[];
   /** Renderer-only visibility overrides; never persisted with transcript messages. */
   dismissedAssistantErrorMessages: Record<string, true>;
+  /**
+   * Monotonic request counter behind `toggleThinkingDisclosure`; the shell
+   * observes it and drives the active pane's controller.
+   */
+  thinkingDisclosureRequest: number;
   /** Session ids whose panes stay mounted, most recently visible first. */
   retainedSessionIds: string[];
   /** Last transcript each retained pane painted. */
@@ -361,6 +366,12 @@ export type AppState = {
   openSubagentTab: (delegationId: string, agentName?: string) => void;
   /** Abort one session's running turn, visible or not. */
   abortSession: (sessionId: string) => Promise<void>;
+  /**
+   * Expand or collapse the visible transcript's thinking blocks. The rows live
+   * inside a session pane, so the shortcut only records the request and the app
+   * shell applies it to the pane on screen.
+   */
+  toggleThinkingDisclosure: () => void;
   openWorkPanel: () => void;
   toggleWorkPanel: () => void;
   openWorkPanelTab: (tab: WorkPanelTab) => void;

@@ -1,10 +1,11 @@
-import { memo, useMemo } from "react";
+import { memo, useCallback, useMemo } from "react";
 import { ChatTranscript } from "./ChatTranscript";
 import { useAppStore } from "../stores/app-store";
 import { headPermission, sessionPermissions } from "../lib/pending-permissions";
 import { headAsk } from "../lib/pending-asks";
 import { useTranscriptView } from "../hooks/use-transcript-view";
 import { TranscriptDisclosureProvider } from "../features/chat/transcript/disclosure";
+import type { ThinkingDisclosureController } from "../features/chat/transcript/disclosure-state";
 
 /**
  * One retained conversation pane (ADR 0137).
@@ -22,10 +23,24 @@ import { TranscriptDisclosureProvider } from "../features/chat/transcript/disclo
 export const SessionPane = memo(function SessionPane({
   sessionId,
   visible,
+  onThinkingControllerChange,
 }: {
   sessionId: string;
   visible: boolean;
+  /**
+   * Reports this pane's thinking-disclosure controller while it is mounted, so
+   * the shell can drive the visible session from the toolbar and the shortcut.
+   */
+  onThinkingControllerChange?: (
+    sessionId: string,
+    controller: ThinkingDisclosureController | null,
+  ) => void;
 }) {
+  const registerThinkingController = useCallback(
+    (controller: ThinkingDisclosureController | null) =>
+      onThinkingControllerChange?.(sessionId, controller),
+    [onThinkingControllerChange, sessionId],
+  );
   const transcript = useTranscriptView(sessionId);
   const loadTranscriptPage = useAppStore((state) => state.loadTranscriptPage);
   const returnToLatest = useAppStore((state) => state.returnToLatestTranscript);
@@ -65,7 +80,7 @@ export const SessionPane = memo(function SessionPane({
       aria-hidden={visible ? undefined : true}
       inert={visible ? undefined : true}
     >
-      <TranscriptDisclosureProvider>
+      <TranscriptDisclosureProvider onControllerChange={registerThinkingController}>
         <ChatTranscript
           sessionId={sessionId}
           messages={transcript.messages}

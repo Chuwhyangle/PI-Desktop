@@ -117,9 +117,17 @@ test("sidebar owns feedback and prefetch while store owns workspace alignment", 
 test("each retained session keeps its own mounted pane", () => {
   // One pane per retained session, keyed by session id, so a switch reveals an
   // already-painted pane instead of re-pointing one transcript (ADR 0137).
+  // The pane's own props are pinned, not the literal tag: a pane may only take
+  // its identity, its visibility, and stable callbacks, so a switch still
+  // reveals an already-painted pane instead of re-pointing one transcript.
+  const paneTag = chatSurface.match(/<SessionPane[\s\S]*?\/>/)?.[0] ?? "";
   assert.match(
     chatSurface,
-    /retainedSessionIds\.map\(\(id\) => \(\s*<SessionPane\s*key=\{id\}\s*sessionId=\{id\}\s*visible=\{visible && id === visibleSessionId\}\s*\/>/,
+    /retainedSessionIds\.map\(\(id\) => \(\s*<SessionPane\s*key=\{id\}\s*sessionId=\{id\}\s*visible=\{visible && id === visibleSessionId\}/,
+  );
+  assert.deepEqual(
+    [...paneTag.matchAll(/\s(\w+)=/g)].map((match) => match[1]),
+    ["key", "sessionId", "visible", "onThinkingControllerChange"],
   );
   assert.match(chatSurface, /const visibleSessionId = retainedSessionIds\[0\]/);
   // The retention bound lives in a pure module, so eviction is unit-testable

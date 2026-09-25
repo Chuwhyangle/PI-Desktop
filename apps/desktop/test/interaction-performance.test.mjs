@@ -28,7 +28,14 @@ const [app, appShell, chatSurface, pane, transcript, toolRow, transcriptShared, 
   ]);
 
 test("streaming state stays inside the chat render boundary", () => {
-  assert.match(app, /<ChatSurface visible=\{page === "chat"\} \/>/);
+  // ChatSurface is memoized, so every prop it takes must be stable. Assert the
+  // exact prop set rather than the literal tag: a new prop here is a change to
+  // the render boundary and has to be reviewed as one.
+  const chatSurfaceTag = app.match(/<ChatSurface[\s\S]*?\/>/)?.[0] ?? "";
+  assert.ok(chatSurfaceTag, "AppShell renders ChatSurface");
+  const props = [...chatSurfaceTag.matchAll(/\s(\w+)=/g)].map((match) => match[1]);
+  assert.deepEqual(props, ["visible", "onThinkingControllerChange"]);
+  assert.match(chatSurfaceTag, /visible=\{page === "chat"\}/);
   assert.doesNotMatch(app, /useAppStore\(\(s\) => s\.messages\)/);
   assert.doesNotMatch(app, /<ChatTranscript/);
   assert.match(chatSurface, /export const ChatSurface = memo/);

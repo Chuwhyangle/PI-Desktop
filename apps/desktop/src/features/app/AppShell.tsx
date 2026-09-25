@@ -1,4 +1,15 @@
-import { type CSSProperties, lazy, type ReactNode, Suspense } from "react";
+import {
+  type CSSProperties,
+  lazy,
+  type ReactNode,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { ChatSurface } from "../../components/ChatSurface";
 import { ConversationTopbar } from "../../components/ConversationTopbar";
 import { ExtensionPromptHost } from "../../components/ExtensionPromptDialog";
@@ -19,7 +30,12 @@ import { WorkPanel } from "../../components/workpanel/WorkPanel";
 import { useCopyTex } from "../../hooks/use-copy-tex";
 import { api } from "../../lib/api";
 import { PortalVisibilityProvider } from "../../lib/portal-visibility";
+import { useAppStore } from "../../stores/app-store";
 import { MidAutumnEggHost } from "../mid-autumn-egg/MidAutumnEggHost";
+import type {
+  ThinkingDisclosureController,
+  ThinkingDisclosureState,
+} from "../chat/transcript/disclosure-state";
 import { CollapsedTitlebarActions, RoutePending } from "./chrome";
 import { useAppShellRuntime } from "./useAppShellRuntime";
 
@@ -43,6 +59,18 @@ const PluginsPage = lazy(() =>
     default: module.PluginsPage,
   })),
 );
+
+/**
+ * Fallbacks for a shell with no pane to toggle: `useSyncExternalStore` needs a
+ * stable subscribe and snapshot even when the active session has no controller.
+ */
+function noThinkingDisclosureSubscribe(): () => void {
+  return () => {};
+}
+
+function noThinkingDisclosureState(): ThinkingDisclosureState {
+  return "none";
+}
 
 export function AppShell() {
   const {
@@ -88,6 +116,50 @@ export function AppShell() {
     workPanelToggleTooltip,
   } = useAppShellRuntime();
   useCopyTex();
+
+  // The thinking toggle has to reach the disclosure map of the pane on screen,
+  // and each retained pane owns its own map (keys would collide in a shared one).
+  // The shell therefore collects the panes' controllers by session id and applies
+  // a request to the active session only; an unmounted pane removes itself.
+  const thinkingControllersRef = useRef(
+    new Map<string, ThinkingDisclosureController>(),
+  );
+  const [thinkingControllerVersion, setThinkingControllerVersion] = useState(0);
+  const registerThinkingController = useCallback(
+    (sessionId: string, controller: ThinkingDisclosureController | null) => {
+      if (controller) thinkingControllersRef.current.set(sessionId, controller);
+      else thinkingControllersRef.current.delete(sessionId);
+      setThinkingControllerVersion((version) => version + 1);
+    },
+    [],
+  );
+  const activeThinkingController = useMemo(
+    // The version is the subscription: it changes when a pane reports or drops
+    // its controller, which is what makes the button appear and disappear.
+    () => thinkingControllersRef.current.get(activeSessionId ?? "") ?? null,
+    [activeSessionId, thinkingControllerVersion],
+  );
+  const thinkingDisclosure = useSyncExternalStore(
+    activeThinkingController?.subscribe ?? noThinkingDisclosureSubscribe,
+    activeThinkingController?.getState ?? noThinkingDisclosureState,
+    noThinkingDisclosureState,
+  );
+  const toggleThinkingDisclosure = useCallback(() => {
+    // Read the session at call time: the request counter is observed by an
+    // effect, so it must not depend on a render-time active session.
+    const sessionId = useAppStore.getState().activeSessionId;
+    if (!sessionId) return;
+    thinkingControllersRef.current.get(sessionId)?.toggle();
+  }, []);
+  const thinkingDisclosureRequest = useAppStore(
+    (state) => state.thinkingDisclosureRequest,
+  );
+  const handledThinkingRequestRef = useRef(thinkingDisclosureRequest);
+  useEffect(() => {
+    if (thinkingDisclosureRequest === handledThinkingRequestRef.current) return;
+    handledThinkingRequestRef.current = thinkingDisclosureRequest;
+    toggleThinkingDisclosure();
+  }, [thinkingDisclosureRequest, toggleThinkingDisclosure]);
 
   // A boot that never reaches the shell gets a surface it can act on instead of
   // a window that only knows how to wait (issue #831). Rendered as a direct child
@@ -169,6 +241,14 @@ export function AppShell() {
                     onToggleSidebar={toggleSidebar}
                     onNewTask={() => void runMenuCommand("newTask")}
                     onOpenSearch={() => setSearchOpen(true)}
+                    // A session with no thinking content has nothing to act on,
+                    // so the button is absent rather than a no-op press.
+                    onToggleThinking={
+                      thinkingDisclosure === "none"
+                        ? undefined
+                        : toggleThinkingDisclosure
+                    }
+                    thinkingExpanded={thinkingDisclosure === "expanded"}
                   />
                 ) : (
                   <div
@@ -259,7 +339,10 @@ export function AppShell() {
                       <PluginsPage />
                     </div>
                   ) : (
-                    <ChatSurface visible={page === "chat"} />
+                    <ChatSurface
+                      visible={page === "chat"}
+                      onThinkingControllerChange={registerThinkingController}
+                    />
                   )}
                 </Suspense>
               </section>
