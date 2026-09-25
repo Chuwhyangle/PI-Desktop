@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Policy-Sync: 2026-09-21.2
+Policy-Sync: 2026-09-25.1
 
 Mandatory rules for AI coding agents working in PI-Desktop.
 
@@ -958,3 +958,19 @@ not actually executed.
   otherwise the critical constraints get diluted.
 * Every change here bumps `Policy-Sync` in both this file and
   `CLAUDE.md`, and passes `pnpm check:agent-policy`.
+
+---
+
+## 20. Fork Workflow Entry Point
+
+This repository is a fork (`Chuwhyangle/PI-Desktop`). `main` is protected by the
+`main-protection` ruleset: every change lands through a pull request, the three
+required checks must pass on the branch, the branch must be up to date with
+`main`, and no actor may bypass the rule. A direct push to `main` is rejected by
+GitHub (`GH013`).
+
+That constraint is enforced mechanically by the ruleset, so it is deliberately
+not restated as prose here. The step-by-step flow, the list of required checks,
+and how to unblock a stalled merge live in `FORK-WORKFLOW.md`. Every deliberate
+difference from upstream - including the ones an upstream merge has to preserve -
+lives in `FORK.md`.
