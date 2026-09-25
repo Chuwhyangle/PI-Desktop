@@ -23,7 +23,7 @@
  * variables, unsigned by default) and is covered by ci-workflow.test.mjs.
  */
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import test from "node:test";
 
 const UPSTREAM = { owner: "vastsa", repo: "PI-Desktop" };
@@ -158,5 +158,37 @@ test("macOS release signing needs the fork's own repository variables", () => {
     releaseWorkflowSource,
     /CSC_NAME: \$\{\{ vars\.APPLE_SIGN_IDENTITY \}\}/,
     "release.yml must take the signing identity from APPLE_SIGN_IDENTITY, not a pinned name",
+  );
+});
+
+/**
+ * The identity also leaks into anything that builds one of this repository's own
+ * release URLs. `pi-host-release.ts` interpolates `GITHUB_REPO`, so three
+ * fixtures that had hard-coded the upstream owner only started failing once the
+ * fork took its identity over — on CI, not locally. Require those fixtures to
+ * derive the owner instead, so the next takeover or rebase cannot reintroduce a
+ * pinned upstream URL.
+ */
+test("release-URL fixtures derive their owner instead of pinning one", async () => {
+  const testDir = new URL(".", import.meta.url);
+  const downloadUrl = /github\.com\/[^/\s"']+\/[^/\s"']+\/releases\/download/;
+  const offenders = [];
+
+  for (const entry of (await readdir(testDir)).sort()) {
+    if (!entry.endsWith(".test.mjs")) continue;
+    const source = await readFile(new URL(entry, testDir), "utf8");
+    source.split("\n").forEach((line, index) => {
+      if (!downloadUrl.test(line)) return;
+      if (line.includes("GITHUB_REPO")) return;
+      offenders.push(`${entry}:${index + 1}  ${line.trim()}`);
+    });
+  }
+
+  assert.deepEqual(
+    offenders,
+    [],
+    "these fixtures build a release URL with a hard-coded owner; interpolate "
+      + "GITHUB_REPO instead:\n"
+      + offenders.join("\n"),
   );
 });

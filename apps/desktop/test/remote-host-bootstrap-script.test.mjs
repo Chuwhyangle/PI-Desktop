@@ -16,10 +16,14 @@ const { buildBootstrapScript, parseBootstrapOutput, shellQuote } = await import(
   "../electron/main/remote/pi-host-bootstrap-script.ts"
 );
 
+const { GITHUB_REPO } = await import("@pi-desktop/shared");
+
 const VERSION = "0.15.1-beta.5";
 const BUNDLE_DIR = `pi-host-${VERSION}-linux-x64`;
 const ARTIFACT_NAME = `${BUNDLE_DIR}.tar.gz`;
-const ARTIFACT_URL = `https://github.com/vastsa/PI-Desktop/releases/download/v${VERSION}/${ARTIFACT_NAME}`;
+// Derived from the same constant the release code builds its URLs from, so the
+// fixture follows whichever repository the build publishes to (fork identity).
+const ARTIFACT_URL = `https://github.com/${GITHUB_REPO}/releases/download/v${VERSION}/${ARTIFACT_NAME}`;
 const DIGEST = "0123456789abcdef".repeat(4);
 /** The sandbox the script's `HOME`/`PATH` point at, outside the real user's. */
 const WORK_SUBDIR = ".pi-desktop/pi-host/.bootstrap";
