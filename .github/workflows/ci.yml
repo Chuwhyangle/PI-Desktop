@@ -1,15 +1,15 @@
 name: CI
 
+# Fork note: upstream skips `docs/**` and `**/*.md` so a documentation-only
+# change costs no CI minutes. This fork requires the two jobs below on the
+# default branch, and a required check that never reports leaves a pull request
+# stuck on "Expected" - which would deadlock auto-merge for any docs-only PR.
+# Running CI unconditionally keeps every PR mergeable and keeps main provably
+# green. See FORK.md.
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
   pull_request:
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
   workflow_dispatch:
 
 concurrency:
