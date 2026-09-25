@@ -16,9 +16,15 @@ test("Settings hides the mounted chat shell and keeps its portal layers out of v
   assert.match(appShell, /className="app-chat-shell"[\s\S]*?hidden=\{page === "settings"\}/);
   assert.match(appShell, /inert=\{page === "settings" \? true : undefined\}/);
   assert.match(appShell, /aria-hidden=\{page === "settings" \? true : undefined\}/);
-  assert.match(appShell, /className="app-chat-shell"[\s\S]*?<ChatSurface visible=\{page === "chat"\} \/>/);
+  // The mounted chat shell is matched by its own gate rather than the literal
+  // tag: ChatSurface may take further stable props without moving out of the
+  // shell, which is what this test is about.
+  assert.match(
+    appShell,
+    /className="app-chat-shell"[\s\S]*?<ChatSurface[\s\S]*?visible=\{page === "chat"\}[\s\S]*?\/>/,
+  );
   assert.match(appShell, /\{page === "settings" \? \([\s\S]*?<SettingsPage \/>/);
-  assert.match(appShell, /<ChatSurface visible=\{page === "chat"\} \/>/);
+  assert.match(appShell, /<ChatSurface[\s\S]*?visible=\{page === "chat"\}/);
   assert.match(appShell, /<SearchDialog open=\{searchOpen\}/);
   assert.match(styles, /\.app-chat-shell\s*\{\s*display:\s*contents;/);
   assert.match(styles, /\.app-chat-shell\[hidden\]\s*\{\s*display:\s*none;/);
