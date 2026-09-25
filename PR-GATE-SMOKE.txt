@@ -1,0 +1,1 @@
+﻿PR gate smoke test. This file only exists to make CI run for a pull request; ci.yml ignores docs/** and *.md, so a code-shaped path is needed. Delete this branch and the file disappears with it.
