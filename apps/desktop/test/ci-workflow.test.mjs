@@ -30,16 +30,17 @@ const [
   read("../../../scripts/export-linux-asar.mjs"),
 ]);
 
-test("CI skips documentation-only pushes and pull requests", () => {
+test("CI always reports, so a required check cannot leave a pull request pending", () => {
+  // Fork divergence. Upstream ignores `docs/**` and `**/*.md` so a
+  // documentation-only change costs no CI minutes. This fork requires the CI
+  // jobs on the default branch, and GitHub leaves a required check that never
+  // reports sitting on "Expected" forever - which deadlocks auto-merge for any
+  // documentation-only pull request. The fork therefore runs CI unconditionally
+  // and asserts the absence of the filter here; see FORK.md.
   assert.equal(
-    (ciWorkflowSource.match(/- 'docs\/\*\*'/g) ?? []).length,
-    2,
-    "docs path is ignored by push and pull_request triggers",
-  );
-  assert.equal(
-    (ciWorkflowSource.match(/- '\*\*\/\*\.md'/g) ?? []).length,
-    2,
-    "Markdown files are ignored by push and pull_request triggers",
+    (ciWorkflowSource.match(/paths-ignore/g) ?? []).length,
+    0,
+    "ci.yml must not filter paths, or a docs-only pull request never reports the required CI jobs",
   );
   assert.match(ciWorkflowSource, /^  workflow_dispatch:/m);
 });
