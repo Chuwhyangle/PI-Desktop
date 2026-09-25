@@ -131,10 +131,14 @@ test("updater gates delivery mode by platform and delivery policy", () => {
     /state\.status === "downloaded"[\s\S]*return this\.state/,
   );
   assert.match(updaterSource, /autoUpdater\.on\("error"/);
+  // Derive the feed identity from the packaging config instead of pinning the
+  // fork owner/repo in a second place: apps/desktop/package.json decides where
+  // the updater looks, so an upstream merge cannot silently split the two.
+  const publishFeed = JSON.parse(pkgSource).build.publish[0];
   assert.match(
     updaterSource,
-    /github\.com\/vastsa\/PI-Desktop\/releases/,
-    "releases fallback URL",
+    new RegExp(`github\\.com/${publishFeed.owner}/${publishFeed.repo}/releases`),
+    "releases fallback URL must match the packaged publish feed",
   );
   assert.match(
     updaterSource,
@@ -231,8 +235,15 @@ test("packaging publishes an electron-updater feed for GitHub Releases", () => {
   const pkg = JSON.parse(pkgSource);
   assert.ok(pkg.dependencies["electron-updater"], "electron-updater dependency");
   assert.equal(pkg.build.publish[0].provider, "github");
-  assert.equal(pkg.build.publish[0].owner, "vastsa");
-  assert.equal(pkg.build.publish[0].repo, "PI-Desktop");
+  // The feed identity is derived, not pinned: the updater must point at the
+  // same owner/repo that electron-builder bakes into app-update.yml.
+  const feed = pkg.build.publish[0];
+  assert.equal(feed.repo, "PI-Desktop", "publish feed repo");
+  assert.ok(feed.owner.length > 0, "publish feed owner");
+  assert.ok(
+    updaterSource.includes(`github.com/${feed.owner}/${feed.repo}/releases`),
+    `publish feed ${feed.owner}/${feed.repo} must match the updater RELEASES_URL`,
+  );
   const macTargets = pkg.build.mac.target.map((entry) => entry.target);
   assert.ok(macTargets.includes("zip"), "mac zip target (Squirrel.Mac feed)");
   // electron-builder must never self-publish (implicit tag publishing would

@@ -47,9 +47,11 @@ describe("GitHub feedback issue URL", () => {
     expect(() =>
       assertFeedbackIssueUrl("https://evil.example/issues/new"),
     ).toThrow(/origin/);
+    // Derive the repository so this case keeps asserting "wrong template"
+    // rather than the repository path once the fork identity changes.
     expect(() =>
       assertFeedbackIssueUrl(
-        "https://github.com/vastsa/PI-Desktop/issues/new?template=feature_request.yml",
+        `https://github.com/${GITHUB_REPO}/issues/new?template=feature_request.yml`,
       ),
     ).toThrow(/template/);
   });

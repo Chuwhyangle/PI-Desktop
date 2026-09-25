@@ -86,8 +86,11 @@ jobs:
     name: Build ${{ matrix.name }}
     needs: verify
     env:
-      # Tag pushes always sign. workflow_dispatch signs unless explicitly disabled.
-      MACOS_SIGN_RELEASE: ${{ github.event_name != 'workflow_dispatch' || inputs.sign_macos == true }}
+      # Tag pushes sign upstream. This fork has no Apple Developer account, so
+      # signing is additionally gated on the repository variable
+      # MACOS_SIGNING = 'true' (Settings -> Secrets and variables -> Actions ->
+      # Variables). Unset or any other value keeps the unsigned lane.
+      MACOS_SIGN_RELEASE: ${{ (github.event_name != 'workflow_dispatch' || inputs.sign_macos == true) && vars.MACOS_SIGNING == 'true' }}
     strategy:
       fail-fast: false
       matrix:
@@ -237,8 +240,16 @@ jobs:
             echo "::error::Add them under Settings → Secrets and variables → Actions. See docs/spec/06-delivery/06-release-runbook.md."
             exit 1
           fi
-          if [[ "${APPLE_TEAM_ID}" != "DUV63RKYTW" ]]; then
-            echo "::error::APPLE_TEAM_ID must be DUV63RKYTW (XingYu Liu Developer ID team)."
+          # The expected team is the fork's own APPLE_TEAM_ID repository
+          # variable, never a hard-coded upstream team. An unset variable is
+          # reported explicitly instead of silently comparing against an empty
+          # string.
+          if [[ -z "${{ vars.APPLE_TEAM_ID }}" ]]; then
+            echo "::error::Set the APPLE_TEAM_ID repository variable before enabling macOS signing."
+            exit 1
+          fi
+          if [[ "${APPLE_TEAM_ID}" != "${{ vars.APPLE_TEAM_ID }}" ]]; then
+            echo "::error::APPLE_TEAM_ID must match the fork's APPLE_TEAM_ID repository variable."
             exit 1
           fi
 
@@ -249,8 +260,10 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           # electron-builder rejects the "Developer ID Application:" prefix on
           # identity names and resolves the certificate itself, so CSC_NAME
-          # carries the bare common name only.
-          CSC_NAME: "XingYu Liu (DUV63RKYTW)"
+          # carries the bare common name only. The value is the fork's own
+          # APPLE_SIGN_IDENTITY repository variable, never a hard-coded upstream
+          # identity.
+          CSC_NAME: ${{ vars.APPLE_SIGN_IDENTITY }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}

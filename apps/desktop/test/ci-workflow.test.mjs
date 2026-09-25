@@ -213,9 +213,11 @@ test("macOS release signing is required on tag pushes", () => {
     releaseWorkflowSource,
     /workflow_dispatch:\s+inputs:\s+sign_macos:[\s\S]*?default:\s*true[\s\S]*?type:\s*boolean/,
   );
+  // The unsigned lane is the default for forks: tag pushes no longer sign on
+  // their own, they also need the MACOS_SIGNING repository variable.
   assert.ok(
     releaseWorkflowSource.includes(
-      "MACOS_SIGN_RELEASE: ${{ github.event_name != 'workflow_dispatch' || inputs.sign_macos == true }}",
+      "MACOS_SIGN_RELEASE: ${{ (github.event_name != 'workflow_dispatch' || inputs.sign_macos == true) && vars.MACOS_SIGNING == 'true' }}",
     ),
   );
 
@@ -232,7 +234,17 @@ test("macOS release signing is required on tag pushes", () => {
     releaseWorkflowSource,
     /Require macOS signing and notarization secrets[\s\S]*?Missing GitHub Actions secrets for macOS signing/,
   );
-  assert.match(releaseWorkflowSource, /APPLE_TEAM_ID must be DUV63RKYTW/);
+  // The expected team and certificate name are parameterized through the fork's
+  // own repository variables, so no upstream Apple identity is pinned here.
+  assert.match(
+    releaseWorkflowSource,
+    /Set the APPLE_TEAM_ID repository variable before enabling macOS signing/,
+  );
+  assert.match(
+    releaseWorkflowSource,
+    /APPLE_TEAM_ID must match the fork's APPLE_TEAM_ID repository variable/,
+  );
+  assert.doesNotMatch(releaseWorkflowSource, /DUV63RKYTW/);
 
   const signedBlock = releaseWorkflowSource.match(
     /- name: Package signed and notarized macOS installer[\s\S]*?(?=\n      - name:)/,
@@ -250,8 +262,10 @@ test("macOS release signing is required on tag pushes", () => {
   }
   // electron-builder throws InvalidConfigurationError when an identity name
   // keeps the "Developer ID Application:" prefix, so CSC_NAME carries the bare
-  // common name and the CLI must not pass -c.mac.identity.
-  assert.match(signedBlock, /CSC_NAME: "XingYu Liu \(DUV63RKYTW\)"/);
+  // common name and the CLI must not pass -c.mac.identity. The name itself is
+  // the fork's APPLE_SIGN_IDENTITY repository variable, never a pinned value.
+  assert.match(signedBlock, /CSC_NAME: \$\{\{ vars\.APPLE_SIGN_IDENTITY \}\}/);
+  assert.doesNotMatch(signedBlock, /CSC_NAME: "(?:Developer ID Application:)?[^$]/);
   assert.doesNotMatch(signedBlock, /-c\.mac\.identity=/);
   assert.doesNotMatch(signedBlock, /CSC_NAME: "Developer ID Application:/);
   assert.match(signedBlock, /-c\.mac\.notarize=true/);
