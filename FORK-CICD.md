@@ -28,9 +28,12 @@ Legend: `[x]` verified working · `[~]` configured but never exercised ·
      |                          | so a code-only PR skips it            |
      | [ ] e2e-smoke.yml        | needs a self-hosted runner            |
      +--------------------------+---------------------------------------+
-     | [ ] branch protection on main requiring the checks above
+     | [x] ruleset `main-protection`: pull request + the three checks above
+     |     + up-to-date branch, no bypass actors -> a direct push to main
+     |     is rejected (GH013)
+     | [x] auto-merge armed on the PR -> GitHub merges it when the checks pass
          |
-         | merge (only when the gate is green)
+         | merge (the ruleset performs it; no manual click)
          v
  (3) MAIN  ......................................................... integration
      ci.yml re-runs on every push to main                        [x] green
@@ -80,8 +83,8 @@ Legend: `[x]` verified working · `[~]` configured but never exercised ·
 
 | # | Stage | State | Evidence |
 | --- | --- | --- | --- |
-| 1 | Local edit + push | `[x]` | `main` at `d6e73c1`, pushed over SSH |
-| 2 | PR gate | `[x]` | PR #1: `PR base` 14s, `CI / js` 4m13s, `CI / rust` 2m1s, all pass. `main` still unprotected |
+| 1 | Local edit + push | `[x]` | `main` at `06385c6`, pushed over SSH |
+| 2 | PR gate, end to end | `[x]` | PR #1 exercised the three checks; PR #2 proved the whole loop: a failing check blocked the merge, the fix turned it green, **auto-merge then merged it unassisted** (`06385c6`), and the branch was deleted. A direct push to `main` is rejected (`GH013`) |
 | 3 | Main CI | `[x]` | run `896c5f0` on `main`: JS 3.7 min + Rust 1.6 min, both success |
 | 4 | Tag release | `[ ]` | **no tag and no release exists yet**; `release.yml` never ran |
 | 5 | Distribution | `[ ]` | no GitHub Release, no update feed published |
@@ -109,28 +112,33 @@ gh run list --repo Chuwhyangle/PI-Desktop --limit 5
 ```
 Push any commit to `main` and watch `CI` go green in about 4 minutes.
 
-### Stage 2 (PR gate) - verified, one step left
+### Stage 2 (PR gate) - verified end to end
 
-Verified by opening PR #1 (`test/pr-gate`, a throwaway non-doc file because
-`ci.yml` ignores markdown). All three required checks passed:
+Two pull requests did the work.
 
-| check | workflow | time |
-| --- | --- | --- |
-| `Head contains latest base` | pr-base.yml | 14s |
-| `JS build / typecheck / lint / architecture / test` | ci.yml | 4m13s |
-| `Rust host-core format / lint / test` | ci.yml | 2m1s |
+**PR #1** exercised the three checks on their own: `Head contains latest base`
+(14s), `JS build / typecheck / lint / architecture / test` (4m13s), and
+`Rust host-core format / lint / test` (2m1s), all green. It was closed without
+merging and its branch deleted. `docs-check.yml` correctly stayed out, because it
+is path-filtered to `docs/**`, `README*.md`, `AGENTS.md`, `CLAUDE.md`,
+`packages/shared/src/changelog*.ts`, `scripts/check-*.mjs`, and `docs/scripts/**`
+and that PR touched none of them.
 
-The PR was closed without merging and the branch deleted, so nothing was left
-behind. `docs-check.yml` correctly stayed out: it is path-filtered to
-`docs/**`, `README*.md`, `AGENTS.md`, `CLAUDE.md`,
-`packages/shared/src/changelog*.ts`, `scripts/check-*.mjs`, and
-`docs/scripts/**`, and the smoke PR touched none of them.
+**PR #2** proved the whole loop, including the failure path:
 
-**Still missing: branch protection.** `GET /branches/main/protection` answers
-`Branch not protected`, so the three checks above run but nothing requires them.
-Set `Settings -> Branches -> Add branch protection rule` for `main`, enable
-"Require status checks to pass", and select the three checks. Until then the
-gate is advisory and a red PR can still be merged.
+1. the ruleset was installed (pull request + the three checks + up-to-date
+   branch, zero bypass actors) and `allow_auto_merge` was switched on;
+2. the PR was armed with `gh pr merge --auto --squash`;
+3. the first run **failed** - `ci.yml` still ignored `docs/**`, and the contract
+   test that pinned that behaviour had to be restated - so the merge was held;
+4. the fix turned the checks green and **GitHub merged the PR by itself**
+   (`06385c6`, squash), then deleted the branch;
+5. a deliberate direct push to `main` was rejected with
+   `GH013: Repository rule violations found`, listing "Changes must be made
+   through a pull request" and "3 of 3 required status checks are expected".
+
+That is the whole gate: it passes, it blocks, it merges itself, and nobody can
+walk around it. The day-to-day commands are in `FORK-WORKFLOW.md`.
 
 ### Stage 4 (tag release) - the first end-to-end proof
 

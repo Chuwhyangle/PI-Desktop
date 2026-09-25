@@ -28,6 +28,8 @@ so signing is off by default and no upstream Apple identity is written down):
 | 4 | `.github/workflows/release.yml` | `MACOS_SIGN_RELEASE` additionally requires the repository variable `MACOS_SIGNING == 'true'`, so tag builds are unsigned unless the variable is set. |
 | 5 | `.github/workflows/release.yml` | The team check compares `APPLE_TEAM_ID` against the `APPLE_TEAM_ID` repository variable (and fails with a clear message when that variable is unset) instead of comparing against the upstream team ID. |
 | 6 | `.github/workflows/release.yml` | `CSC_NAME` comes from the `APPLE_SIGN_IDENTITY` repository variable instead of a hard-coded certificate name. |
+| 7 | `.github/workflows/ci.yml` | The `docs/**` and `**/*.md` path filters are removed, so CI reports on every pull request. A required check that never reports leaves a pull request pending on "Expected" forever, which would deadlock auto-merge for a docs-only change. |
+| 8 | `AGENTS.md`, `CLAUDE.md` | Both carry a short fork-workflow entry point pointing at `FORK-WORKFLOW.md`, and both bump `Policy-Sync` to the same token so `pnpm check:agent-policy` stays green. The step-by-step flow lives in `FORK-WORKFLOW.md`, as `AGENTS.md` §19 prescribes for multi-step flows. |
 
 Tests updated so the identity lives in one place:
 
@@ -40,6 +42,9 @@ Tests updated so the identity lives in one place:
 * `apps/desktop/test/fork-identity.test.mjs` (new) asserts that the three
   identity places agree with each other and never fall back to `vastsa/PI-Desktop`,
   and that `release.yml` stays unsigned by default with no upstream Apple identity.
+* `apps/desktop/test/ci-workflow.test.mjs` also asserts that `ci.yml` has no path
+  filter at all, inverting the upstream assertion that docs-only changes are
+  skipped (see divergence 7).
 
 Not forked on purpose: `.github/workflows/mirror-to-cnb.yml` is gated on
 `github.repository == 'vastsa/PI-Desktop'` because the CNB mirror credentials
@@ -102,6 +107,19 @@ The fork does not inherit upstream settings; configure these once:
 * Release tags still follow the upstream flow: `node scripts/release.mjs X.Y.Z --tag`
   then `git push fork <branch> vX.Y.Z`. The release lands on **this** fork's
   Releases page, which is what the packaged `app-update.yml` points at.
+* **Ruleset `main-protection`** (Settings → Rules → Rulesets): requires a pull
+  request, the three status checks (`Head contains latest base`,
+  `JS build / typecheck / lint / architecture / test`,
+  `Rust host-core format / lint / test`), and an up-to-date branch, with **no
+  bypass actors**, so even the owner cannot push to `main` directly. Applied with
+  `gh api -X POST repos/Chuwhyangle/PI-Desktop/rulesets --input <file>`.
+  `required_approving_review_count` is `0` on purpose: GitHub forbids approving
+  your own pull request, so any higher value would make the owner's pull requests
+  unmergeable.
+* **Auto-merge enabled** (`allow_auto_merge`) and **`delete_branch_on_merge`
+  enabled**, so a pull request merges itself once the required checks pass and its
+  branch is cleaned up.
+* The day-to-day flow built on those settings is in `FORK-WORKFLOW.md`.
 
 ## Unsigned artifacts
 

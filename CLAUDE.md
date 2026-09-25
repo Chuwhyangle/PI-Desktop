@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Policy-Sync: 2026-09-21.2
+Policy-Sync: 2026-09-25.1
 
 Instructions for Claude Code CLI and Claude Cowork on PI-Desktop.
 
@@ -337,3 +337,17 @@ Security reports are private via `SECURITY.md` — never open a public issue for
 | Cross-cutting protocol types | `packages/shared/` |
 
 When unsure which layer owns a concern, follow the frozen process model and existing domain modules — do not invent a new boundary without an ADR.
+
+---
+
+## Fork workflow
+
+This is a fork (`Chuwhyangle/PI-Desktop`), and `main` is protected by the
+`main-protection` ruleset: every change lands through a pull request, the three
+required checks must pass, the branch must be up to date, and nobody — owner
+included — may bypass it. A direct push to `main` fails with `GH013`.
+
+The ruleset enforces that mechanically, so it is not repeated as policy prose
+here. Runbook: [`FORK-WORKFLOW.md`](FORK-WORKFLOW.md). Upstream differences that
+an upstream merge must preserve: [`FORK.md`](FORK.md). Pipeline map and what is
+still unverified: [`FORK-CICD.md`](FORK-CICD.md).
