@@ -30,6 +30,8 @@ so signing is off by default and no upstream Apple identity is written down):
 | 6 | `.github/workflows/release.yml` | `CSC_NAME` comes from the `APPLE_SIGN_IDENTITY` repository variable instead of a hard-coded certificate name. |
 | 7 | `.github/workflows/ci.yml` | The `docs/**` and `**/*.md` path filters are removed, so CI reports on every pull request. A required check that never reports leaves a pull request pending on "Expected" forever, which would deadlock auto-merge for a docs-only change. |
 | 8 | `AGENTS.md`, `CLAUDE.md` | Both carry a short fork-workflow entry point pointing at `FORK-WORKFLOW.md`, and both bump `Policy-Sync` to the same token so `pnpm check:agent-policy` stays green. The step-by-step flow lives in `FORK-WORKFLOW.md`, as `AGENTS.md` §19 prescribes for multi-step flows. |
+| 9 | `.github/workflows/e2e.yml` (new) | Runs the headless end-to-end probes that drive host-core over its real protocol. Upstream runs no end-to-end probe in CI at all, which this fork cannot afford because it auto-merges on green: a change can pass every unit test and still break the RPC surface. A new file, so an upstream merge cannot conflict with it. |
+| 10 | `.gitignore` | Ignores `.artifacts/`, the screenshots, fixtures and result dumps `scripts/e2e-*.mjs` writes while a probe runs. Upstream leaves it untracked-but-not-ignored, so `git add -A` after a local e2e run sweeps a hundred generated files into the commit. |
 
 Tests updated so the identity lives in one place:
 

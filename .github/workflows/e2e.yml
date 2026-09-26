@@ -1,0 +1,87 @@
+name: E2E headless
+
+# Fork addition. Upstream runs no end-to-end probe in CI at all, so a change that
+# passes every unit test can still break the RPC surface or stall the host — and
+# this fork auto-merges on green, which makes that gap load-bearing.
+#
+# These probes drive host-core over its real protocol with no display, so they run
+# on a stock ubuntu runner; the probes that need Electron stay local until a
+# self-hosted runner exists. See FORK-CICD.md.
+#
+# No path filter on purpose: this job is a required check, and a required check
+# that never reports leaves a pull request pending forever.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-headless-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  headless:
+    name: E2E headless (host-core protocol probes)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The probes import packages/shared/dist, so the workspace has to be built
+      # before they run.
+      - name: Build workspace packages
+        run: pnpm build:js
+
+      - name: Build host-core
+        run: cargo build --locked -p host-core
+
+      - name: Run headless probes
+        env:
+          # Explicit rather than relying on the probes' target/debug default, so a
+          # renamed artifact fails loudly here instead of silently skipping.
+          PI_DESKTOP_HOST_BIN: target/debug/pi-desktop-host-core
+        run: |
+          set -euo pipefail
+          # Ordered fastest-first so a broken probe fails the job sooner.
+          #
+          # Every probe below was verified to run with no Electron binary present
+          # at all (it was hidden and the list re-measured), which is the state of
+          # a CI runner: pnpm does not run electron's postinstall, so no binary is
+          # downloaded. Probes that boot Electron fail here with "Electron binary
+          # missing" - four of them looked headless by their name alone, so keep
+          # this list measured rather than guessed.
+          probes=(
+            e2e-subagent-models
+            e2e-scheduled-legacy-maintenance
+            e2e-session-collaboration
+            e2e-scheduled-paths
+            e2e-scheduled-project-removal
+            e2e-scheduled-calendar-intent
+            e2e-session-completion
+            e2e-smoke
+            e2e-plan
+          )
+          for probe in "${probes[@]}"; do
+            echo "::group::$probe"
+            node "scripts/${probe}.mjs"
+            echo "::endgroup::"
+          done

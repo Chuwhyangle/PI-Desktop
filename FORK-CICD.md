@@ -26,7 +26,12 @@ Legend: `[x]` verified working · `[~]` configured but never exercised ·
      |                          | path-filtered: docs/**, AGENTS.md,    |
      |                          | CLAUDE.md, changelog*.ts, check-*.mjs |
      |                          | so a code-only PR skips it            |
-     | [ ] e2e-smoke.yml        | needs a self-hosted runner            |
+     | e2e.yml (fork, new)      | 9 host-core protocol probes, measured | [x]
+     |                          | to run with no Electron binary at all |
+     |                          | (a CI runner has none)                |
+     | [ ] Electron e2e         | the other 43 need Electron (a         |
+     |                          | display), a network marketplace, or   |
+     |                          | an extra bundle step                  |
      +--------------------------+---------------------------------------+
      | [x] ruleset `main-protection`: pull request + the three checks above
      |     + up-to-date branch, no bypass actors -> a direct push to main
@@ -89,7 +94,7 @@ Legend: `[x]` verified working · `[~]` configured but never exercised ·
 | 4 | Tag release | `[ ]` | **no tag and no release exists yet**; `release.yml` never ran |
 | 5 | Distribution | `[ ]` | no GitHub Release, no update feed published |
 | 6 | Client auto-update | `[ ]` | never observed; `allowPrerelease` fix still pending |
-| - | E2E in CI | `[ ]` | no workflow runs any `test:e2e:*` (upstream has none either) |
+| - | E2E in CI | `[~]` | `e2e.yml` runs 9 host-core protocol probes, each measured to pass with no Electron binary present (~2 min). The other 43 need Electron, a network marketplace, or an extra bundle step, and upstream runs none at all. Becomes a required check once it has passed on a real runner |
 | - | Supply chain | `[ ]` | no provenance, SBOM, or SHA-pinned actions |
 | - | Local clone | `[!]` | clone is `--depth 1`; `git merge upstream/main` fails on unrelated histories |
 
@@ -182,5 +187,8 @@ a Gatekeeper prompt on macOS. That is the documented trade-off, not a failure.
    install, i.e. there is exactly one channel.
 4. **Stage 5 addition** - CN mirror on the operator's own server, since
    `mirror-to-cnb.yml` never runs in this fork.
-5. **Stage 2 addition** - E2E on a self-hosted runner. This is the largest
-   remaining hole: no workflow runs any `test:e2e:*`, upstream included.
+5. **Stage 2 addition, part two** - the 43 probes that need Electron. The 9
+   headless ones already run in `e2e.yml`; the rest need a display and therefore
+   a self-hosted runner (Windows, or Linux with Xvfb). Until then, a change that
+   passes every unit test and every headless probe can still break the UI, and
+   nothing in CI would notice.

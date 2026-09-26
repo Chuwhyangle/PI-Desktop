@@ -49,6 +49,10 @@ coverage/
 .pi-desktop-test/
 .pi/
 .cc-connect/
+# Screenshots, fixtures and result dumps the e2e probes write while they run.
+# `.artifacts/` is produced by `scripts/e2e-*.mjs`, so it has to stay out of the
+# tree; the CI probes run from a clean checkout and never commit it.
+.artifacts/
 
 .playwright-mcp/
 .claude/
