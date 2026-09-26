@@ -33,7 +33,7 @@ Legend: `[x]` verified working · `[~]` configured but never exercised ·
      |                          | display), a network marketplace, or   |
      |                          | an extra bundle step                  |
      +--------------------------+---------------------------------------+
-     | [x] ruleset `main-protection`: pull request + the three checks above
+     | [x] ruleset `main-protection`: pull request + the four checks above
      |     + up-to-date branch, no bypass actors -> a direct push to main
      |     is rejected (GH013)
      | [x] auto-merge armed on the PR -> GitHub merges it when the checks pass
@@ -88,13 +88,13 @@ Legend: `[x]` verified working · `[~]` configured but never exercised ·
 
 | # | Stage | State | Evidence |
 | --- | --- | --- | --- |
-| 1 | Local edit + push | `[x]` | `main` at `06385c6`, pushed over SSH |
-| 2 | PR gate, end to end | `[x]` | PR #1 exercised the three checks; PR #2 proved the whole loop: a failing check blocked the merge, the fix turned it green, **auto-merge then merged it unassisted** (`06385c6`), and the branch was deleted. A direct push to `main` is rejected (`GH013`) |
+| 1 | Local edit + push | `[x]` | `main` at `a28e106`, pushed over SSH |
+| 2 | PR gate, end to end | `[x]` | PR #1 exercised the three checks; PR #2 proved the whole loop: a failing check blocked the merge, the fix turned it green, **auto-merge then merged it unassisted** (`06385c6`), and the branch was deleted. A direct push to `main` is rejected (`GH013`). The gate has since grown to four checks (see the E2E row) |
 | 3 | Main CI | `[x]` | run `896c5f0` on `main`: JS 3.7 min + Rust 1.6 min, both success |
 | 4 | Tag release | `[ ]` | **no tag and no release exists yet**; `release.yml` never ran |
 | 5 | Distribution | `[ ]` | no GitHub Release, no update feed published |
 | 6 | Client auto-update | `[ ]` | never observed; `allowPrerelease` fix still pending |
-| - | E2E in CI | `[~]` | `e2e.yml` runs 9 host-core protocol probes, each measured to pass with no Electron binary present (~2 min). The other 43 need Electron, a network marketplace, or an extra bundle step, and upstream runs none at all. Becomes a required check once it has passed on a real runner |
+| - | E2E in CI | `[x]` | `e2e.yml` runs 9 host-core protocol probes, each measured to pass with no Electron binary present. Green on the runner in 3m42s (PR #4), and now the fourth required check. The other 43 probes need Electron, a network marketplace, or an extra bundle step; upstream runs none at all |
 | - | Supply chain | `[ ]` | no provenance, SBOM, or SHA-pinned actions |
 | - | Local clone | `[!]` | clone is `--depth 1`; `git merge upstream/main` fails on unrelated histories |
 
@@ -180,8 +180,8 @@ a Gatekeeper prompt on macOS. That is the documented trade-off, not a failure.
 
 1. **Stage 4** - prove one tag produces a complete, installable release. Highest
    value: stages 5 and 6 are unreachable without it, and it needs no secrets.
-2. **Stage 2, last step** - protect `main` with the three checks the smoke PR
-   just exercised, so the gate stops being advisory.
+2. **Stage 2, last step** - done. `main` requires the four checks and no actor may
+   bypass them. The remaining additions are the ones listed below.
 3. **Stage 6 enabler** - make `allowPrerelease` configurable, then define the
    nightly / beta / stable channels. Until then only non-`-` tags reach an
    install, i.e. there is exactly one channel.
