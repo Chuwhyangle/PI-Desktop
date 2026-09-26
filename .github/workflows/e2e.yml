@@ -62,22 +62,23 @@ jobs:
         run: |
           set -euo pipefail
           # Ordered fastest-first so a broken probe fails the job sooner.
-          # Every probe below was verified to pass headlessly; the excluded ones
-          # need Electron, a network marketplace, or an extra bundle step.
+          #
+          # Every probe below was verified to run with no Electron binary present
+          # at all (it was hidden and the list re-measured), which is the state of
+          # a CI runner: pnpm does not run electron's postinstall, so no binary is
+          # downloaded. Probes that boot Electron fail here with "Electron binary
+          # missing" - four of them looked headless by their name alone, so keep
+          # this list measured rather than guessed.
           probes=(
             e2e-subagent-models
-            e2e-session-collaboration
-            e2e-provider-certificates
-            e2e-session-completion
-            e2e-scheduled-calendar-intent
-            e2e-plan-ui
-            e2e-scheduled-project-removal
             e2e-scheduled-legacy-maintenance
+            e2e-session-collaboration
             e2e-scheduled-paths
-            e2e-supervision
-            e2e-plan
+            e2e-scheduled-project-removal
+            e2e-scheduled-calendar-intent
+            e2e-session-completion
             e2e-smoke
-            e2e-trusted-extensions
+            e2e-plan
           )
           for probe in "${probes[@]}"; do
             echo "::group::$probe"
