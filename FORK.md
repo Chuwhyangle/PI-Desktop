@@ -110,9 +110,10 @@ The fork does not inherit upstream settings; configure these once:
   then `git push fork <branch> vX.Y.Z`. The release lands on **this** fork's
   Releases page, which is what the packaged `app-update.yml` points at.
 * **Ruleset `main-protection`** (Settings → Rules → Rulesets): requires a pull
-  request, the three status checks (`Head contains latest base`,
+  request, the four status checks (`Head contains latest base`,
   `JS build / typecheck / lint / architecture / test`,
-  `Rust host-core format / lint / test`), and an up-to-date branch, with **no
+  `Rust host-core format / lint / test`,
+  `E2E headless (host-core protocol probes)`), and an up-to-date branch, with **no
   bypass actors**, so even the owner cannot push to `main` directly. Applied with
   `gh api -X POST repos/Chuwhyangle/PI-Desktop/rulesets --input <file>`.
   `required_approving_review_count` is `0` on purpose: GitHub forbids approving

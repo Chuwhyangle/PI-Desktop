@@ -14,7 +14,7 @@ Read this before changing anything. `FORK.md` lists what differs from upstream;
 | Requirement | Consequence |
 | --- | --- |
 | Pull request | a branch has to open a PR before it can land |
-| 3 status checks green | CI must pass on the branch |
+| 4 status checks green | CI must pass on the branch |
 | Branch up to date with `main` | the tested commit is the one that lands |
 | No bypass actors | the rule applies to the owner too |
 
@@ -51,20 +51,26 @@ Then walk away. When the required checks turn green, GitHub merges the PR, and
 PR simply stays open, still armed, and merges by itself as soon as a later push
 turns the checks green.
 
-## The three required checks
+## The four required checks
 
-| Check | Workflow | Runs when |
-| --- | --- | --- |
-| `Head contains latest base` | `pr-base.yml` | every pull request |
-| `JS build / typecheck / lint / architecture / test` | `ci.yml` | every pull request and push to `main` |
-| `Rust host-core format / lint / test` | `ci.yml` | every pull request and push to `main` |
+| Check | Workflow | Runs when | Catches |
+| --- | --- | --- | --- |
+| `Head contains latest base` | `pr-base.yml` | every pull request | a branch that is behind `main`, so the tested commit is the one that lands |
+| `JS build / typecheck / lint / architecture / test` | `ci.yml` | every pull request and push to `main` | types, ~5400 unit tests, lint, style tokens, architecture budgets |
+| `Rust host-core format / lint / test` | `ci.yml` | every pull request and push to `main` | `cargo fmt`, `clippy`, host-core tests |
+| `E2E headless (host-core protocol probes)` | `e2e.yml` | every pull request and push to `main` | 9 probes that drive host-core over its real protocol — the RPC surface, tool dispatch, sessions, scheduling, plugins |
 
-A fourth workflow, `docs-check.yml`, also runs on pull requests, but only when the
-change touches documentation or policy paths (`docs/**`, `README*.md`,
-`AGENTS.md`, `CLAUDE.md`, `packages/shared/src/changelog*.ts`,
-`scripts/check-*.mjs`). It is deliberately **not** a required check: because it is
-path-filtered, requiring it would leave every code-only pull request waiting on a
-check that never reports.
+The fourth one matters because none of the other three prove the application still
+*runs*: a change can pass every unit test and still break the protocol. Nine of the
+52 `scripts/e2e-*.mjs` probes run without an Electron binary; the rest need a
+display and stay local until a self-hosted runner exists.
+
+`docs-check.yml` also runs on pull requests, but only when the change touches
+documentation or policy paths (`docs/**`, `README*.md`, `AGENTS.md`, `CLAUDE.md`,
+`packages/shared/src/changelog*.ts`, `scripts/check-*.mjs`). It is deliberately
+**not** required: it is path-filtered, and a required check that never reports
+leaves a pull request pending forever. `ci.yml` and `e2e.yml` carry no path filter
+for exactly that reason - a docs-only pull request still reports all four.
 
 ## Why approvals are zero
 
