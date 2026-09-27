@@ -63,6 +63,16 @@ pub fn is_valid_permission_mode(mode: &str) -> bool {
     PERMISSION_MODES.contains(&mode)
 }
 
+/// Permission mode used when neither the session override nor the global
+/// setting names one — the last link of the D115 resolution chain
+/// (`session.permission_mode` -> `settings.defaultPermissionMode` -> this).
+///
+/// Fork divergence: upstream falls back to `ask`, so every new session asks
+/// for approval. This fork falls back to `auto`, so a new session runs
+/// unattended; the user can still pin `ask` in Settings, and the Plan/Goal
+/// contract modes keep their hard deny regardless of this value.
+pub const FALLBACK_PERMISSION_MODE: &str = "auto";
+
 fn default_permission_mode() -> String {
     "inherit".to_string()
 }

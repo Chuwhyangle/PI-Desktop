@@ -413,7 +413,7 @@ How high-risk tool calls get approved is governed by a **permission mode**:
 
 | Mode | Write/Edit | Bash / plugin tools |
 |---|---|---|
-| `ask` (default) | confirm | confirm |
+| `ask` | confirm | confirm |
 | `accept-edits` | auto-allow | confirm |
 | `auto` | auto-allow | auto-allow |
 
@@ -424,7 +424,9 @@ Resolution order per tool call (host-core `tools.execute`):
 
 1. Session's persisted `permission_mode`, unless it is `inherit`
 2. Global `defaultPermissionMode` from app settings (`ask` / `accept-edits` / `auto`)
-3. `ask`
+3. The fallback mode, `auto` in this fork (upstream: `ask`); the constant is
+   `FALLBACK_PERMISSION_MODE` in `packages/shared/src/types/permissions.ts` and
+   `crates/host-core/src/sessions.rs`, and the divergence is recorded in FORK.md
 
 Rules:
 

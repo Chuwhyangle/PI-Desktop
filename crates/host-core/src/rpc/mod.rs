@@ -3417,10 +3417,11 @@ async fn handle_request(
                     st.permissions.expire_stale();
                     // Effective permission mode (D115): per-session override
                     // unless it is `inherit`, then the global settings default,
-                    // then `ask`. A subagent's tool call carries its own scope
-                    // (ADR 0089), which resolves the call under that mode
-                    // instead; external-path gating and the contract modes'
-                    // hard deny are untouched by the override.
+                    // then the fork fallback (`sessions::FALLBACK_PERMISSION_MODE`).
+                    // A subagent's tool call carries its own scope (ADR 0089),
+                    // which resolves the call under that mode instead;
+                    // external-path gating and the contract modes' hard deny
+                    // are untouched by the override.
                     let session_pm = sessions::session_permission_mode(&st.db, &p.session_id)
                         .map_err(|e| rpc_err(1000, e.to_string(), "INTERNAL"))?
                         .filter(|m| m != "inherit");
@@ -3437,7 +3438,7 @@ async fn handle_request(
                                     .map(str::to_string)
                             })
                             .filter(|m| sessions::is_valid_permission_mode(m) && m != "inherit")
-                            .unwrap_or_else(|| "ask".to_string()),
+                            .unwrap_or_else(|| sessions::FALLBACK_PERMISSION_MODE.to_string()),
                     };
                     let effective_pm = match p.permission_scope.as_deref() {
                         Some(scope)
@@ -3982,7 +3983,7 @@ async fn handle_request(
                                 .map(str::to_string)
                         })
                 })
-                .unwrap_or_else(|| "ask".into());
+                .unwrap_or_else(|| sessions::FALLBACK_PERMISSION_MODE.into());
             let args = params.get("args").cloned().unwrap_or_else(|| json!({}));
             let workspace_path = resolve_tool_workspace_for_call(&st, session_id, &args)?;
             let scratch_path = scratch::session_dir(&st.data_dir, session_id);

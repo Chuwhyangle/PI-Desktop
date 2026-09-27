@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   IPC,
   IPC_WHITELIST,
+  FALLBACK_PERMISSION_MODE,
   PROPOSAL_KINDS,
   PROTOCOL_VERSION,
   SCHEMA_VERSION,
@@ -168,11 +169,13 @@ describe("Plan protocol contracts", () => {
     expect(statuses).toContain("pending");
   });
 
-  it("normalizes the plan approval permission fallback to ask", () => {
-    expect(normalizeGlobalPermissionMode(undefined)).toBe("ask");
-    expect(normalizeGlobalPermissionMode("invalid")).toBe("ask");
+  it("normalizes the permission fallback to the fork default", () => {
+    expect(FALLBACK_PERMISSION_MODE).toBe("auto");
+    expect(normalizeGlobalPermissionMode(undefined)).toBe("auto");
+    expect(normalizeGlobalPermissionMode("invalid")).toBe("auto");
     expect(normalizeGlobalPermissionMode("ask")).toBe("ask");
     expect(normalizeGlobalPermissionMode("accept-edits")).toBe("accept-edits");
+    expect(normalizeGlobalPermissionMode(undefined, "ask")).toBe("ask");
     expect(isGlobalPermissionMode("ask")).toBe(true);
     expect(isGlobalPermissionMode("invalid")).toBe(false);
   });

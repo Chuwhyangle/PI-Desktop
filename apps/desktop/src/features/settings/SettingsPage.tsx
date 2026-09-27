@@ -6,6 +6,7 @@ import type {
   PluginScenicThemesDestinationMeta,
   ShortcutPlatform,
 } from "@pi-desktop/shared";
+import { FALLBACK_PERMISSION_MODE } from "@pi-desktop/shared";
 import { useAppStore } from "../../stores/app-store";
 import { useMidAutumnEggStore } from "../../stores/mid-autumn-egg-store";
 import { api } from "../../lib/api";
@@ -448,7 +449,7 @@ export function SettingsPage() {
                   <SettingsMenuSelect
                     className="settings-permission-select"
                     label={t("settings.permissionMode")}
-                    value={settings.defaultPermissionMode ?? "ask"}
+                    value={settings.defaultPermissionMode ?? FALLBACK_PERMISSION_MODE}
                     onChange={(mode) =>
                       void saveSettings({
                         defaultPermissionMode: mode as GlobalPermissionMode,

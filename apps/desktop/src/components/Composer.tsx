@@ -11,6 +11,7 @@ import type {
   PermissionMode,
 } from "@pi-desktop/shared";
 import {
+  FALLBACK_PERMISSION_MODE,
   initialThinkingLevelForBinding,
   imageGenerationBindings,
   isImageGenerationModel,
@@ -315,7 +316,7 @@ export function Composer({
   // Permission mode (D115/D132): inherited sessions still resolve through the
   // global setting, but the composer presents only the effective mode.
   const globalPermissionMode: PermissionMode =
-    settings?.defaultPermissionMode ?? "ask";
+    settings?.defaultPermissionMode ?? FALLBACK_PERMISSION_MODE;
   const sessionPermissionMode: PermissionMode = activeSession
     ? isPermissionMode(activeSession.permissionMode)
       ? activeSession.permissionMode
