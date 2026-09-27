@@ -449,3 +449,48 @@ fn a_claim_that_loses_the_race_returns_conflict_and_rolls_back() {
     assert_eq!(turn_count(&db, &child), 0);
     assert_eq!(get(&db, &message.id).unwrap().unwrap().status, "queued");
 }
+
+#[test]
+fn an_inherited_session_falls_back_to_the_fork_permission_mode() {
+    let dir = tempfile::tempdir().unwrap();
+    let db = Database::open(&dir.path().join("pi.sqlite")).unwrap();
+    let inherited = sessions::create_session_with_options(
+        &db,
+        sessions::SessionCreateOptions {
+            title: Some("Inherited".into()),
+            mode: Some("agent".into()),
+            ..Default::default()
+        },
+    )
+    .unwrap()
+    .id;
+    assert_eq!(
+        sessions::session_permission_mode(&db, &inherited)
+            .unwrap()
+            .as_deref(),
+        Some("inherit")
+    );
+    // Nothing has pinned a mode yet, so the resolution chain lands on its last
+    // link. This fork sets that link to `auto` (upstream: `ask`), which is what
+    // lets a brand-new session run unattended.
+    assert_eq!(sessions::FALLBACK_PERMISSION_MODE, "auto");
+    assert_eq!(
+        permissions::effective_mode(&db, &inherited).unwrap(),
+        sessions::FALLBACK_PERMISSION_MODE
+    );
+    // An explicit global default still outranks the fallback...
+    db.set_setting("app", &json!({"defaultPermissionMode":"ask"}))
+        .unwrap();
+    assert_eq!(permissions::effective_mode(&db, &inherited).unwrap(), "ask");
+    // ...and a stored per-session mode still outranks the global default.
+    db.conn()
+        .execute(
+            "UPDATE sessions SET permission_mode='accept-edits' WHERE id=?1",
+            params![inherited],
+        )
+        .unwrap();
+    assert_eq!(
+        permissions::effective_mode(&db, &inherited).unwrap(),
+        "accept-edits"
+    );
+}

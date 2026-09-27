@@ -382,7 +382,7 @@ tool/protocol 名称，请求中单独携带固定的 shell ID。
 
 | 模式 | Write/Edit | Bash / 插件工具 |
 |---|---|---|
-| `ask`（默认） | 确认 | 确认 |
+| `ask` | 确认 | 确认 |
 | `accept-edits` | 自动允许 | 确认 |
 | `auto` | 自动允许 | 自动允许 |
 
@@ -393,7 +393,10 @@ tool/protocol 名称，请求中单独携带固定的 shell ID。
 
 1. 会话的持久化 `permission_mode`，除非是 `inherit`
 2. 应用程序设置中的全局 `defaultPermissionMode` (`ask` / `accept-edits` / `auto`)
-3.`ask`
+3. 兜底模式：本 fork 为 `auto`（上游为 `ask`）；常量为
+   `packages/shared/src/types/permissions.ts` 与
+   `crates/host-core/src/sessions.rs` 中的 `FALLBACK_PERMISSION_MODE`，
+   分叉记录见 FORK.md
 
 规则：
 
