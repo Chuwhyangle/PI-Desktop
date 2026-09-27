@@ -306,6 +306,10 @@ async function main() {
       unattended.errorCode || unattended.content?.code,
     );
 
+    // The write above lands in the checked-in fixture directory, so take it
+    // back out: the probe leaves the workspace exactly as it found it.
+    rmSync(join(sample, "unattended.txt"), { force: true });
+
     // External paths require an explicit denial before execution can report
     // the sandbox result. This keeps the smoke harness aligned with the host's
     // permission contract instead of leaving the request pending.
