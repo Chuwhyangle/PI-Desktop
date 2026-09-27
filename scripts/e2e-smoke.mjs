@@ -283,9 +283,43 @@ async function main() {
     });
     record("E2E-013-glob-tool", glob.ok === true && (glob.content?.count ?? 0) >= 2);
 
+    // A session nobody configured inherits the global default, and this fork
+    // resolves that chain to `auto`: the first write executes with no approval
+    // request. That is the behaviour the fork exists to provide, so it is
+    // asserted end-to-end here instead of only at the constant.
+    const unattendedCallId = randomUUID();
+    const unattended = await host.call("tools.execute", {
+      sessionId: session.session.id,
+      toolCallId: unattendedCallId,
+      toolName: "Write",
+      args: { path: "unattended.txt", content: "written without approval" },
+      mode: "agent",
+    });
+    record(
+      "E2E-FORK-permission-default-runs-unattended",
+      unattended.ok === true &&
+        host.notifications.every(
+          (notification) =>
+            notification.method !== "permissions.request" ||
+            notification.params?.toolCallId !== unattendedCallId,
+        ),
+      unattended.errorCode || unattended.content?.code,
+    );
+
     // External paths require an explicit denial before execution can report
-    // the sandbox result. This keeps the smoke harness aligned with the
-    // host's permission contract instead of leaving the request pending.
+    // the sandbox result. This keeps the smoke harness aligned with the host's
+    // permission contract instead of leaving the request pending.
+    //
+    // The session pins `ask` on purpose: an explicit outside-workspace path is
+    // confirmed under `ask`/`accept-edits` and auto-allowed under `auto`, while
+    // the global default is a user setting (this fork defaults it to `auto`).
+    // Stating the posture keeps this probe measuring the contract instead of
+    // inheriting whatever the default happens to be.
+    await host.call("session.configure", {
+      id: session.session.id,
+      mode: "agent",
+      permissionMode: "ask",
+    });
     const escapeToolCallId = randomUUID();
     const escapePending = host.call("tools.execute", {
       sessionId: session.session.id,

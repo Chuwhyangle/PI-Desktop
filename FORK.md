@@ -32,7 +32,7 @@ so signing is off by default and no upstream Apple identity is written down):
 | 8 | `AGENTS.md`, `CLAUDE.md` | Both carry a short fork-workflow entry point pointing at `FORK-WORKFLOW.md`, and both bump `Policy-Sync` to the same token so `pnpm check:agent-policy` stays green. The step-by-step flow lives in `FORK-WORKFLOW.md`, as `AGENTS.md` §19 prescribes for multi-step flows. |
 | 9 | `.github/workflows/e2e.yml` (new) | Runs the headless end-to-end probes that drive host-core over its real protocol. Upstream runs no end-to-end probe in CI at all, which this fork cannot afford because it auto-merges on green: a change can pass every unit test and still break the RPC surface. A new file, so an upstream merge cannot conflict with it. |
 | 10 | `.gitignore` | Ignores `.artifacts/`, the screenshots, fixtures and result dumps `scripts/e2e-*.mjs` writes while a probe runs. Upstream leaves it untracked-but-not-ignored, so `git add -A` after a local e2e run sweeps a hundred generated files into the commit. |
-| 11 | `packages/shared/src/types/permissions.ts`, `crates/host-core/src/sessions.rs`, `crates/host-core/src/rpc/mod.rs`, `crates/host-core/src/session_collaboration/permissions.rs`, `apps/desktop/src/components/Composer.tsx`, `apps/desktop/src/features/settings/SettingsPage.tsx` | The permission-mode resolution chain (D115: session override → global `defaultPermissionMode` → fallback) ends in `auto` instead of `ask`, so a session created with `permission_mode = inherit` — which is every session the desktop app creates — runs unattended instead of stopping on its first Write/Edit/Bash. Each side keeps one constant (`FALLBACK_PERMISSION_MODE`) and the two renderer defaults read it, so the mode the UI presents is the mode host-core enforces. Plan/Goal contract modes keep their hard deny, and an explicit global default or per-session override still outranks the fallback. Documented in `docs/spec/03-runtime/03-tools-and-permissions.md` (+ zh-CN). |
+| 11 | `packages/shared/src/types/permissions.ts`, `crates/host-core/src/sessions.rs`, `crates/host-core/src/rpc/mod.rs`, `crates/host-core/src/session_collaboration/permissions.rs`, `apps/desktop/src/components/Composer.tsx`, `apps/desktop/src/features/settings/SettingsPage.tsx`, `scripts/e2e-smoke.mjs` | The permission-mode resolution chain (D115: session override → global `defaultPermissionMode` → fallback) ends in `auto` instead of `ask`, so a session created with `permission_mode = inherit` — which is every session the desktop app creates — runs unattended instead of stopping on its first Write/Edit/Bash. Each side keeps one constant (`FALLBACK_PERMISSION_MODE`) and the two renderer defaults read it, so the mode the UI presents is the mode host-core enforces. Plan/Goal contract modes keep their hard deny, and an explicit global default or per-session override still outranks the fallback. The `e2e-smoke` probe stopped depending on the default: it now asserts the fork behaviour end-to-end (an unconfigured session writes with no approval request) and pins `ask` on the session for the outside-workspace sandbox check, which is confirmed under `ask`/`accept-edits` and auto-allowed under `auto`. Documented in `docs/spec/03-runtime/03-tools-and-permissions.md` (+ zh-CN). |
 
 Tests updated so the identity lives in one place:
 
@@ -55,6 +55,11 @@ Tests updated so the identity lives in one place:
   `crates/host-core/src/session_collaboration/tests.rs` covers the same chain
   behaviourally: inherit resolves to the fallback, and both the global default
   and a stored per-session mode still outrank it.
+* `scripts/e2e-smoke.mjs` no longer inherits the default permission mode: the
+  new `E2E-FORK-permission-default-runs-unattended` case proves an unconfigured
+  session writes with no approval request, and `E2E-019-path-sandbox` pins `ask`
+  on its session so the outside-workspace check keeps measuring that posture
+  (see divergence 11).
 
 Not forked on purpose: `.github/workflows/mirror-to-cnb.yml` is gated on
 `github.repository == 'vastsa/PI-Desktop'` because the CNB mirror credentials
